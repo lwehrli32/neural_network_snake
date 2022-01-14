@@ -2,11 +2,13 @@
 import turtle
 import random
 import time
-
+from RecordData import DataRecorder
 
 class SnakeGame:
 
     def __init__(self, user=False):
+
+        self.data_recorder = DataRecorder()
 
         # creating turtle screen
         self.screen = turtle.Screen()
@@ -284,4 +286,9 @@ class SnakeGame:
 
 
 if __name__ == "__main__":
-    snake = SnakeGame()
+    snake = SnakeGame(user=True)
+
+    while True:
+        if not snake.step():
+            snake.close_game()
+            break

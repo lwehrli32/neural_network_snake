@@ -3,26 +3,54 @@ import os
 
 class DataRecorder:
     DATA_PATH = 'data/'
-    TRAINING_DATA_FILE = 'training_data.csv'
+    FILES = {
+        "training_data": {
+            "index": 0,
+            "filename": 'training_data.csv'
+        },
+        "move_data": {
+            "index": 1,
+            "filename": 'move_data.csv'
+        }
+    }
 
-    def __int__(self):
+    def __init__(self):
 
         # check if data folder exists
         if not os.path.exists(self.DATA_PATH):
             os.mkdir(self.DATA_PATH)
 
-        # create path to training file
-        self.training_data_file_path = os.path.join(self.DATA_PATH, self.TRAINING_DATA_FILE)
+        self.init_files()
 
-        # create the file if it does not exist
-        if not os.path.exists(self.training_data_file_path):
-            training_file = open(self.training_data_file_path, "x")
-            training_file.close()
+    def init_files(self):
 
-    def record_training_data(self, data):
-        training_file = open(self.training_data_file_path, "a")
+        for file in self.FILES:
+            meta_data = self.FILES.get(file)
 
-        # write data to file
-        training_file.write(data)
+            # create path to files
+            file_path = os.path.join(self.DATA_PATH, meta_data['filename'])
+            self.FILES[file]['filepath'] = file_path
 
-        training_file.close()
+            # create the file if it does not exist
+            if not os.path.exists(file_path):
+                training_file = open(file_path, "x")
+                training_file.close()
+
+    def record_data(self, file, data):
+        try:
+            file_path = self.FILES[file]['filepath']
+        except Exception as e:
+            print(e)
+            return False
+
+        if not file_path:
+            return False
+
+        file = open(file_path, "a")
+        file.write(data)
+        file.close()
+
+        return True
+
+if __name__ == "__main__":
+    record = DataRecorder()
