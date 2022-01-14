@@ -15,8 +15,7 @@ class NeuralNetwork:
             loop = True
 
             while loop:
-
-
+                break
 
 if __name__ == "__main__":
     pass
