@@ -46,8 +46,18 @@ class DataRecorder:
         if not file_path:
             return False
 
+        new_data = ""
+        if isinstance(data, list):
+            for index, item in enumerate(data):
+                if index == len(data) - 1:
+                    new_data += str(item) + "\n"
+                else:
+                    new_data += str(item) + ","
+        else:
+            new_data = data
+
         file = open(file_path, "a")
-        file.write(data)
+        file.write(new_data)
         file.close()
 
         return True
