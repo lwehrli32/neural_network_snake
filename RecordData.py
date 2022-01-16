@@ -7,10 +7,6 @@ class DataRecorder:
         "training_data": {
             "index": 0,
             "filename": 'training_data.csv'
-        },
-        "move_data": {
-            "index": 1,
-            "filename": 'move_data.csv'
         }
     }
 

@@ -4,6 +4,7 @@ import random
 import time
 from RecordData import DataRecorder
 
+
 class SnakeGame:
 
     def __init__(self, user=False, game_number=0):
@@ -16,7 +17,7 @@ class SnakeGame:
         self.screen.title('SNAKE GAME')
         self.screen.setup(width=700, height=700)
         self.screen.tracer(0)
-        self.screen.bgcolor('turquoise')
+        self.screen.bgcolor('white')
 
         # creating a border for our game
         self.tracer = turtle.Turtle()
@@ -58,6 +59,7 @@ class SnakeGame:
         self.fruit.goto(30, 30)
 
         self.old_fruit = []
+        self.new_fruit = None
 
         # scoring
         self.scoring = turtle.Turtle()
@@ -66,7 +68,8 @@ class SnakeGame:
         self.scoring.penup()
         self.scoring.hideturtle()
         self.scoring.goto(0, 300)
-        self.scoring.write("Score: 0  Game number: " + str(self.game_number), align="center", font=("Courier", 24, "bold"))
+        self.scoring.write("Score: 0  Game number: " + str(self.game_number), align="center",
+                           font=("Courier", 24, "bold"))
 
         self.is_done = False
 
@@ -191,11 +194,11 @@ class SnakeGame:
 
         return can_turn
 
-    def calc_optimal(self):
+    def calc_optimal(self, new_fruit):
         optimal_dir = [0, 0, 0, 0]
 
-        f_x = self.new_fruit.xcor()
-        f_y = self.new_fruit.ycor()
+        f_x = new_fruit.xcor()
+        f_y = new_fruit.ycor()
         s_x = self.snake.xcor()
         s_y = self.snake.ycor()
 
@@ -219,16 +222,17 @@ class SnakeGame:
             self.fruit.goto(x, y)
             self.scoring.clear()
             self.score += 1
-            self.scoring.write("Score: {}  Game number: {}".format(self.score, self.game_number), align="center", font=("Courier", 24, "bold"))
+            self.scoring.write("Score: {}  Game number: {}".format(self.score, self.game_number), align="center",
+                               font=("Courier", 24, "bold"))
             self.delay -= 0.001
 
             # creating new_ball
-            new_fruit = turtle.Turtle()
-            new_fruit.speed(0)
-            new_fruit.shape('square')
-            new_fruit.color('red')
-            new_fruit.penup()
-            self.old_fruit.append(new_fruit)
+            self.new_fruit = turtle.Turtle()
+            self.new_fruit.speed(0)
+            self.new_fruit.shape('square')
+            self.new_fruit.color('red')
+            self.new_fruit.penup()
+            self.old_fruit.append(self.new_fruit)
 
         # adding ball to snake
         for index in range(len(self.old_fruit) - 1, 0, -1):
@@ -257,7 +261,7 @@ class SnakeGame:
         if self.snake.xcor() > 280 or self.snake.xcor() < -300 or self.snake.ycor() > 240 or self.snake.ycor() < -240:
             time.sleep(1)
             self.screen.clear()
-            self.screen.bgcolor('turquoise')
+            self.screen.bgcolor('white')
             self.scoring.goto(0, 0)
             self.scoring.write("   GAME OVER \n Your Score is {}".format(self.score), align="center",
                                font=("Courier", 30, "bold"))
@@ -269,7 +273,7 @@ class SnakeGame:
             if food.distance(self.snake) < 20:
                 time.sleep(1)
                 self.screen.clear()
-                self.screen.bgcolor('turquoise')
+                self.screen.bgcolor('white')
                 self.scoring.goto(0, 0)
                 self.scoring.write("    GAME OVER \n Your Score is {}".format(self.score), align="center",
                                    font=("Courier", 30, "bold"))
