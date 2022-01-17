@@ -59,7 +59,6 @@ class SnakeGame:
         self.fruit.goto(30, 30)
 
         self.old_fruit = []
-        self.new_fruit = None
 
         # scoring
         self.scoring = turtle.Turtle()
@@ -72,6 +71,7 @@ class SnakeGame:
                            font=("Courier", 24, "bold"))
 
         self.is_done = False
+        self.action = 0
 
         if user:
             self.render_keys()
@@ -85,18 +85,22 @@ class SnakeGame:
 
     def snake_go_up(self):
         if self.snake.direction != "down":
+            self.set_action('up')
             self.snake.direction = "up"
 
     def snake_go_down(self):
         if self.snake.direction != "up":
+            self.set_action('down')
             self.snake.direction = "down"
 
     def snake_go_left(self):
         if self.snake.direction != "right":
+            self.set_action('left')
             self.snake.direction = "left"
 
     def snake_go_right(self):
         if self.snake.direction != "left":
+            self.set_action('right')
             self.snake.direction = "right"
 
     def snake_move(self):
@@ -116,7 +120,42 @@ class SnakeGame:
             x = self.snake.xcor()
             self.snake.setx(x + 20)
 
-    def is_overlapping(self, direction, fruit):
+    def set_action(self, action):
+        snake_dir = self.snake.direction
+        new_action = 0
+        if snake_dir == 'up':
+            if action == 'up':
+                new_action = 0
+            elif action == 'right':
+                new_action = 1
+            elif action == 'left':
+                new_action = -1
+        elif snake_dir == 'down':
+            if action == 'down':
+                new_action = 0
+            elif action == 'left':
+                new_action = 1
+            elif action == 'right':
+                new_action = -1
+        elif snake_dir == 'right':
+            if action == 'right':
+                new_action = 0
+            elif action == 'down':
+                new_action = 1
+            elif action == 'up':
+                new_action = -1
+        elif snake_dir == 'left':
+            if action == 'left':
+                new_action = 0
+            elif action == 'up':
+                new_action = 1
+            elif action == 'down':
+                new_action = -1
+
+        self.action = new_action
+
+    def is_overlapping(self, left, front, right, fruit):
+        can_turn = [1,1,1]
         s_top = self.snake.ycor() + 10
         s_bottom = self.snake.ycor() - 10
         s_right = self.snake.xcor() + 10
@@ -131,74 +170,117 @@ class SnakeGame:
             print(e)
             return True
 
-        if direction == 0:
-            if f_left <= s_left - 20 < f_right and s_top == f_top:
-                return True
-        elif direction == 1:
+        if left == 'right' or front == 'right' or right == 'right':
             if f_right >= s_right + 20 > f_left and s_top == f_top:
-                return True
-        elif direction == 2:
+                if left == 'right':
+                    can_turn[0] = 0
+                elif front == 'right':
+                    can_turn[1] = 0
+                elif right == 'right':
+                    can_turn[2] = 0
+        elif left == 'left' or front == 'left' or right == 'left':
+            if f_left <= s_left - 20 < f_right and s_top == f_top:
+                if left == 'left':
+                    can_turn[0] = 0
+                elif front == 'left':
+                    can_turn[1] = 0
+                elif right == 'left':
+                    can_turn[2] = 0
+        elif left == 'up' or front == 'up' or right == 'up':
             if f_top >= s_top + 20 > f_bottom and s_right == f_right:
-                return True
-        elif direction == 3:
+                if left == 'up':
+                    can_turn[0] = 0
+                elif front == 'up':
+                    can_turn[1] = 0
+                elif right == 'up':
+                    can_turn[2] = 0
+        elif left == 'down' or front == 'down' or right == 'down':
             if f_bottom <= s_bottom - 20 < f_top and s_right == f_right:
-                return True
-
-        return False
+                if left == 'down':
+                    can_turn[0] = 0
+                elif front == 'down':
+                    can_turn[1] = 0
+                elif right == 'down':
+                    can_turn[2] = 0
+        return can_turn
 
     def find_obs(self):
-        can_turn = [1, 1, 1, 1]
+        # left, front, right
+        can_turn = [1, 1, 1]
 
         if len(self.old_fruit) > 0:
 
             # find if you can turn that direction
             for i, fruit in enumerate(self.old_fruit):
-                for index, dir in enumerate(can_turn):
-                    if index == 0:
-                        if self.snake.direction == 'right':
-                            can_turn[index] = 0
-                        elif self.is_overlapping(index, fruit):
-                            can_turn[index] = 0
-                        elif self.snake.xcor() <= -300 + 10:
-                            can_turn[index] = 0
-                    elif index == 1:
-                        if self.snake.direction == 'left':
-                            can_turn[index] = 0
-                        elif self.is_overlapping(index, fruit):
-                            can_turn[index] = 0
-                        elif self.snake.xcor() >= 280 - 10:
-                            can_turn[index] = 0
-                    elif index == 2:
-                        if self.snake.direction == 'down':
-                            can_turn[index] = 0
-                        elif self.is_overlapping(index, fruit):
-                            can_turn[index] = 0
-                        elif self.snake.xcor() >= 240 - 10:
-                            can_turn[index] = 0
-                    elif index == 3:
-                        if self.snake.direction == 'up':
-                            can_turn[index] = 0
-                        elif self.is_overlapping(index, fruit):
-                            can_turn[index] = 0
-                        elif self.snake.xcor() <= -240 + 10:
-                            can_turn[index] = 0
+                if self.snake.direction == 'right':
+                    can_turn = self.is_overlapping('up', 'right', 'down', fruit)
+                    if self.snake.xcor() >= 240 - 10:
+                        can_turn[0] = 0
+                    if self.snake.xcor() >= 280 - 10:
+                        can_turn[1] = 0
+                    if self.snake.xcor() <= -240 + 10:
+                        can_turn[2] = 0
+                elif self.snake.direction == 'left':
+                    can_turn = self.is_overlapping('down', 'left', 'up', fruit)
+                    if self.snake.xcor() <= -240 + 10:
+                        can_turn[0] = 0
+                    if self.snake.xcor() <= -300 + 10:
+                        can_turn[1] = 0
+                    if self.snake.xcor() >= 240 - 10:
+                        can_turn[2] = 0
+                elif self.snake.direction == 'up':
+                    can_turn = self.is_overlapping('left', 'up', 'right', fruit)
+                    if self.snake.xcor() <= -300 + 10:
+                        can_turn[0] = 0
+                    if self.snake.xcor() >= 240 - 10:
+                        can_turn[1] = 0
+                    if self.snake.xcor() >= 280 - 10:
+                        can_turn[2] = 0
+                elif self.snake.direction == 'down':
+                    can_turn = self.is_overlapping('right', 'down', 'left', fruit)
+                    if self.snake.xcor() <= -300 + 10:
+                        can_turn[2] = 0
+                    if self.snake.xcor() <= -240 + 10:
+                        can_turn[1] = 0
+                    if self.snake.xcor() >= 280 - 10:
+                        can_turn[0] = 0
         else:
             if self.snake.direction == 'right':
-                can_turn[0] = 0
-            if self.snake.direction == 'left':
-                can_turn[1] = 0
-            if self.snake.direction == 'up':
-                can_turn[3] = 0
-            if self.snake.direction == 'down':
-                can_turn[2] = 0
+                if self.snake.xcor() >= 240 - 10:
+                    can_turn[0] = 0
+                if self.snake.xcor() >= 280 - 10:
+                    can_turn[1] = 0
+                if self.snake.xcor() <= -240 + 10:
+                    can_turn[2] = 0
+            elif self.snake.direction == 'left':
+                if self.snake.xcor() <= -240 + 10:
+                    can_turn[0] = 0
+                if self.snake.xcor() <= -300 + 10:
+                    can_turn[1] = 0
+                if self.snake.xcor() >= 240 - 10:
+                    can_turn[2] = 0
+            elif self.snake.direction == 'up':
+                if self.snake.xcor() <= -300 + 10:
+                    can_turn[0] = 0
+                if self.snake.xcor() >= 240 - 10:
+                    can_turn[1] = 0
+                if self.snake.xcor() >= 280 - 10:
+                    can_turn[2] = 0
+            elif self.snake.direction == 'down':
+                if self.snake.xcor() <= -300 + 10:
+                    can_turn[2] = 0
+                if self.snake.xcor() <= -240 + 10:
+                    can_turn[1] = 0
+                if self.snake.xcor() >= 280 - 10:
+                    can_turn[0] = 0
 
         return can_turn
 
-    def calc_optimal(self, new_fruit):
+    def calc_optimal(self):
         optimal_dir = [0, 0, 0, 0]
 
-        f_x = new_fruit.xcor()
-        f_y = new_fruit.ycor()
+        f_x = self.fruit.xcor()
+        f_y = self.fruit.ycor()
         s_x = self.snake.xcor()
         s_y = self.snake.ycor()
 
@@ -227,12 +309,12 @@ class SnakeGame:
             self.delay -= 0.001
 
             # creating new_ball
-            self.new_fruit = turtle.Turtle()
-            self.new_fruit.speed(0)
-            self.new_fruit.shape('square')
-            self.new_fruit.color('red')
-            self.new_fruit.penup()
-            self.old_fruit.append(self.new_fruit)
+            new_fruit = turtle.Turtle()
+            new_fruit.speed(0)
+            new_fruit.shape('square')
+            new_fruit.color('red')
+            new_fruit.penup()
+            self.old_fruit.append(new_fruit)
 
         # adding ball to snake
         for index in range(len(self.old_fruit) - 1, 0, -1):
@@ -281,7 +363,6 @@ class SnakeGame:
                 return False
 
         time.sleep(self.delay)
-
         self.screen.update()
         return True
 

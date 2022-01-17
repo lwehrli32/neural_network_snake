@@ -27,40 +27,55 @@ class NeuralNetwork:
 
             while loop:
                 if not self.user:
-                    new_snake_direction = rnd.randint(0, 3)
+                    action = self.generate_snake_action()
                     snake_dir = game.snake.direction
 
-                    if new_snake_direction == 0 and snake_dir != 'right':
-                        game.snake.direction = 'left'
-                    elif new_snake_direction == 1 and snake_dir != 'left':
-                        game.snake.direction = 'right'
-                    elif new_snake_direction == 2 and snake_dir != 'down':
-                        game.snake.direction = 'up'
-                    elif new_snake_direction == 3 and snake_dir != 'up':
-                        game.snake.direction = 'down'
+                    if action == -1:
+                        if snake_dir == 'right':
+                            game.snake.direction = 'up'
+                        elif snake_dir == 'left':
+                            game.snake.direction = 'down'
+                        elif snake_dir == 'up':
+                            game.snake.direction = 'left'
+                        elif snake_dir == 'down':
+                            game.snake.direction == 'right'
+                    elif action == 1:
+                        if snake_dir == 'right':
+                            game.snake.direction = 'down'
+                        elif snake_dir == 'left':
+                            game.snake.direction = 'up'
+                        elif snake_dir == 'up':
+                            game.snake.direction = 'right'
+                        elif snake_dir == 'down':
+                            game.snake.direction == 'left'
+                else:
+                    action = game.action
 
-                self.record_snake_obs(game)
-
+                self.record_snake_obs(game, action)
+                game.set_action(game.snake.direction)
                 loop = game.step()
 
-            self.record_snake_obs(game)
+            self.record_snake_obs(game, action)
             game.close_game()
 
         print("Getting all training data done. All " + str(self.num_games) + " games finished")
 
-    def record_snake_obs(self, game):
-        obs = self.get_snake_observations(game)
+    def generate_snake_action(self):
+        action = rnd.randint(0, 2) - 1
+        return action
+
+    def record_snake_obs(self, game, action):
+        obs = self.get_snake_observations(game, action)
         self.record_data(obs)
 
-    def get_snake_observations(self, game, add_dir=True):
+    def get_snake_observations(self, game, action):
         obs = game.find_obs()
-        opt = game.calc_optimal(game)
+        obs.append(action)
 
-        for direction in opt:
-            obs.append(direction)
-
-        if add_dir:
-            obs.append(game.snake.direction)
+        if game.is_done:
+            obs.append(0)
+        else:
+            obs.append(1)
 
         return obs
 
@@ -78,7 +93,7 @@ class NeuralNetwork:
         y = array[:, 4]
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, random_state=1)
         x_train = self.sc.fit_transform(x_train)
-        x_test = self.sc.transform(x_test)
+        #x_test = self.sc.transform(x_test)
 
         self.mlpc.fit(x_train, y_train)
 
@@ -95,7 +110,7 @@ class NeuralNetwork:
 
         loop = True
         while loop:
-            obs = self.get_snake_observations(game, add_dir=False)
+            obs = self.get_snake_observations(game)
             new_snake_direction = self.run_nn(obs)
             snake_dir = game.snake.direction
 
@@ -116,7 +131,7 @@ class NeuralNetwork:
 
 def main():
     print("Loading. . .")
-    snakeNN = NeuralNetwork(num_games=50)
+    snakeNN = NeuralNetwork(num_games=1, user=True)
     snakeNN.init_data()
     #snakeNN.load_dataset('training_data')
     #snakeNN.snake_wtih_nn()
