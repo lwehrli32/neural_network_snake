@@ -32,13 +32,16 @@ class DataRecorder:
                 training_file = open(file_path, "x")
                 training_file.close()
 
-    def record_data(self, file, data):
+    def test_file(self, file):
         try:
             file_path = self.FILES[file]['filepath']
+            return file_path
         except Exception as e:
-            print(e)
-            return False
+            print('Cannot read file: ' + e)
+            return None
 
+    def record_data(self, file, data):
+        file_path = self.test_file(file)
         if not file_path:
             return False
 
@@ -57,6 +60,18 @@ class DataRecorder:
         file.close()
 
         return True
+
+    def read_data(self, file):
+        file_path = self.test_file(file)
+        if not file_path:
+            return False
+
+        file_data = []
+        for line in file:
+            file_data.append(line)
+
+        return file
+
 
 if __name__ == "__main__":
     record = DataRecorder()

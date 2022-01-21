@@ -1,9 +1,14 @@
 import random as rnd
+
+import numpy as np
+import tflearn
 from pandas import read_csv
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+from tflearn.layers.core import input_data, fully_connected
+from tflearn.layers.estimator import regression
 
 from Snake import SnakeGame
 from RecordData import DataRecorder
@@ -18,6 +23,7 @@ class NeuralNetwork:
         self.user = user
         self.sc = StandardScaler()
         self.mlpc = MLPClassifier(hidden_layer_sizes=2, max_iter=500)
+        self.filename = "snakeio_data.tflearn"
 
     def init_data(self):
         for i in range(self.num_games):
@@ -38,7 +44,7 @@ class NeuralNetwork:
                         elif snake_dir == 'up':
                             game.snake.direction = 'left'
                         elif snake_dir == 'down':
-                            game.snake.direction == 'right'
+                            game.snake.direction = 'right'
                     elif action == 1:
                         if snake_dir == 'right':
                             game.snake.direction = 'down'
@@ -47,7 +53,7 @@ class NeuralNetwork:
                         elif snake_dir == 'up':
                             game.snake.direction = 'right'
                         elif snake_dir == 'down':
-                            game.snake.direction == 'left'
+                            game.snake.direction = 'left'
                 else:
                     action = game.action
 
@@ -82,7 +88,7 @@ class NeuralNetwork:
     def load_dataset(self, file):
 
         print("Training data...")
-
+        """
         file_meta_data = self.data_recorder.FILES.get(file)
         file_path = file_meta_data.get('filepath')
 
@@ -96,6 +102,21 @@ class NeuralNetwork:
         #x_test = self.sc.transform(x_test)
 
         self.mlpc.fit(x_train, y_train)
+        """
+
+    def create_model(self):
+        network = input_data(shape=[None, 4, 1], name='input')
+        network = fully_connected(network, 1, activation='linear')
+        network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
+        model = tflearn.DNN(network)
+        return model
+
+    def train(self, data, model):
+        X = np.array([i[0] for i in data]).reshape(-1, 4, 1)
+        y = np.array([i[1] for i in data]).reshape(-1, 1)
+        model.fit(X, y, n_epoch=1, shuffle=True, run_id=self.filename)
+        model.save(self.filename)
+        return model
 
     def run_nn(self, obs):
         xnew = []
@@ -128,11 +149,21 @@ class NeuralNetwork:
     def record_data(self, data):
         self.data_recorder.record_data('training_data', data)
 
+    def read_data(self):
+        return self.data_recorder.read_data()
+
+    def train_data(self, init=False):
+        if init:
+            self.init_data()
+        training_data = self.read_data()
+        model = self.create_model()
+        self.train()
+
 
 def main():
     print("Loading. . .")
-    snakeNN = NeuralNetwork(num_games=1, user=True)
-    snakeNN.init_data()
+    snakeNN = NeuralNetwork(num_games=200, user=False)
+    snakeNN.train_data()
     #snakeNN.load_dataset('training_data')
     #snakeNN.snake_wtih_nn()
 
