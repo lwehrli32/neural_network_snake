@@ -1,7 +1,8 @@
 import random as rnd
-
 import numpy as np
-import tflearn
+import tflearn as tf
+import tensorflow
+from numpy import argmax
 from pandas import read_csv
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -74,14 +75,17 @@ class NeuralNetwork:
         obs = self.get_snake_observations(game, action)
         self.record_data(obs)
 
-    def get_snake_observations(self, game, action):
+    def get_snake_observations(self, game, action, add_done=True):
         obs = game.find_obs()
-        obs.append(action)
 
-        if game.is_done:
-            obs.append(0)
-        else:
-            obs.append(1)
+        if action is not None:
+            obs.append(action)
+
+        if add_done:
+            if game.is_done:
+                obs.append(0)
+            else:
+                obs.append(1)
 
         return obs
 
@@ -108,12 +112,12 @@ class NeuralNetwork:
         network = input_data(shape=[None, 4, 1], name='input')
         network = fully_connected(network, 1, activation='linear')
         network = regression(network, optimizer='adam', learning_rate=1e-2, loss='mean_square', name='target')
-        model = tflearn.DNN(network)
+        model = tf.DNN(network)
         return model
 
     def train(self, data, model):
-        X = np.array([i[0] for i in data]).reshape(-1, 4, 1)
-        y = np.array([i[1] for i in data]).reshape(-1, 1)
+        X = np.array([i[0:len(i) - 1] for i in data]).reshape(-1, 4, 1)
+        y = np.array([i[len(i) - 1] for i in data]).reshape(-1, 1)
         model.fit(X, y, n_epoch=1, shuffle=True, run_id=self.filename)
         model.save(self.filename)
         return model
@@ -125,47 +129,74 @@ class NeuralNetwork:
         pred = self.mlpc.predict(xnew)
         return pred[0]
 
-    def snake_wtih_nn(self):
+    def snake_wtih_nn(self, model):
         print("Starting game with neural network. . .")
         game = SnakeGame(user=False)
 
         loop = True
         while loop:
-            obs = self.get_snake_observations(game)
-            new_snake_direction = self.run_nn(obs)
+            obs = self.get_snake_observations(game, None, add_done=False)
+
+            preds = []
+            for new_action in range(-1, 2):
+                new_obs = [i for i in obs]
+                new_obs.append(new_action)
+                preds.append(model.predict(np.array(new_obs).reshape(-1, 4, 1)))
+
+            new_snake_direction = argmax(np.array(preds)) - 1
             snake_dir = game.snake.direction
 
-            if new_snake_direction == 'left' and snake_dir != "right":
-                game.snake.direction = 'left'
-            elif new_snake_direction == 'right' and snake_dir != 'left':
-                game.snake.direction = 'right'
-            elif new_snake_direction == 'up' and snake_dir != 'down':
-                game.snake.direction = 'up'
-            elif new_snake_direction == 'down' and snake_dir != 'up':
-                game.snake.direction = 'down'
+            if new_snake_direction == -1:
+                if snake_dir == 'left':
+                    game.snake.direction = 'down'
+                elif snake_dir == 'right':
+                    game.snake.direction = 'up'
+                elif snake_dir == 'up':
+                    game.snake.direction = 'left'
+                elif snake_dir == 'down':
+                    game.snake.direction = 'right'
+            elif new_snake_direction == 1:
+                if snake_dir == 'left':
+                    game.snake.direction = 'up'
+                elif snake_dir == 'right':
+                    game.snake.direction = 'down'
+                elif snake_dir == 'up':
+                    game.snake.direction = 'right'
+                elif snake_dir == 'down':
+                    game.snake.direction = 'left'
 
+            self.record_snake_obs(game, new_snake_direction)
             loop = game.step()
+
+        self.record_snake_obs(game, new_snake_direction)
 
     def record_data(self, data):
         self.data_recorder.record_data('training_data', data)
 
     def read_data(self):
-        return self.data_recorder.read_data()
+        return self.data_recorder.read_data('training_data')
 
     def train_data(self, init=False):
         if init:
             self.init_data()
         training_data = self.read_data()
+
+        if len(training_data) < 10000:
+            print("Need more training data")
+            return
+
         model = self.create_model()
-        self.train()
+        model = self.train(training_data, model)
+        self.snake_wtih_nn(model)
 
 
 def main():
     print("Loading. . .")
     snakeNN = NeuralNetwork(num_games=200, user=False)
     snakeNN.train_data()
-    #snakeNN.load_dataset('training_data')
-    #snakeNN.snake_wtih_nn()
+    # snakeNN.load_dataset('training_data')
+    # snakeNN.snake_wtih_nn()
+
 
 if __name__ == "__main__":
     main()

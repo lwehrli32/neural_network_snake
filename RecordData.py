@@ -66,11 +66,19 @@ class DataRecorder:
         if not file_path:
             return False
 
+        training_file = open(file_path, "r")
         file_data = []
-        for line in file:
-            file_data.append(line)
+        for line in training_file:
+            vals = line.split(",")
+            new_line = []
+            for val in vals:
+                if '\n' in val:
+                    val = val[0]
+                new_line.append(val)
+            file_data.append(new_line)
 
-        return file
+        training_file.close()
+        return file_data
 
 
 if __name__ == "__main__":
