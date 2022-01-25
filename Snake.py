@@ -39,6 +39,7 @@ class SnakeGame:
 
         # score
         self.score = 0
+        self.prev_score = 0
         self.delay = 0.1
 
         # snake
